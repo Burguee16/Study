@@ -1,0 +1,45 @@
+                    QUE ES SQLITE?
+Sqlite es una biblioteca en lenguaje C que implementa un motor de base de datos SQL pequeño, rapido, autonomo, de alta confiabilidad
+y con todas las funciones. Sqlite es el motor de base de datos mas utilizado en el mundo. SQLite esta integrado en todos los
+telefonos moviles y la mayoria de las computadoras y viene incluido en inumerables otras aplicaciones que la gente usa todos los dias.
+
+El formato de archivo SQLite es estable, multiplataforma y compatible con versiones anteriores, y los desarrolladores se comprometen a mantenerlo
+asi hasta el año 2050.Los archivos de base de datos SQLite se utilizan habitualmente como contenedores para transferir contenido enriquecido entre
+sistemas [1],[2],[3] y como formato de archivo a largo plazo para datos [4]. Hay mas de 1 billon(1e12) de bases de datos SQLite en uso activo.
+
+EL CODIGO FUENTE DE SQLite es de dominio publico y todos pueden usarlo libremente para cualquiera proposito.
+
+                    WHAT IS SQLITE?
+SQLite is a C-language library that implements a small, fast, self-contained, high-reliability, full-featured, SQL database
+engine. SQLite is the most used database engine in the world. SQLite is built into a mobile phones and most computers and comes
+bundled insied countless other applications that people use every day.
+
+The SQLite file format is stable, cross-platform, and backwards compaptible and the developers pledge to keep it that way
+trough the year 2050. SQLite database files are commonly used as containers to transfer rich content between systems.[1],[2],[3]
+and as a long-term archival formal for data [4]. There are over 1 trillon (1e12) SQLite databases in active use [5].
+
+SQLite sources code is in the public-domain and is free to everyone to use for any purpose.
+
+-------------------------------------------------------------------------------------------------------------------------------------------------
+
+1*TIPOS DE DATOS EN SQLITE
+La mayoria de los motores de bases de datos SQL (todos los motores de bases de datos SQL, excepto SQLite, hasta donde sabemos)
+utilizan tipado estatico y rigido. Con el tipado estatico, el tipo de datos de un valor esta determinado por su contenedor:
+la columna particular en la que se almacena el valor.
+
+SQLite utiliza un sistema de tipos dinamicos mas general. En SQLite, el tipo de datos de un valor esta asociado con el valor en si, no con
+su contenedor. El sistema de tupos dinamicos de SQLite es compatible con versiones anterirores de los sistemas de tipos estacicos mas comunes de 
+otros motores de bases de datos en el sentido que las sentencias SQL que funcionan en bases de datos con tipos estaticos funcionan de la misma manera
+en SQLite.
+Sin embargo, el tipado dinamico de SQLite le permite hacer cosas que no son posibles en las bases de datos tradicionales con tipos rigidos. El tipado
+flexible es una caracteristica de SQLite, no un error.
+
+
+1*DATATYPES IN SQLITE
+Most SQL database engines(every SQL database engine other than SQLite, as far as we know) uses static, rigid typing. Whit static typing,
+the datatype of a value is determined by its container - the particular column in wich the vales is stores.
+
+SQLite uses a more general dynamic type system. In SQLite, the datatype of a values is associated whith the value itself, not with th
+value itself, not with its container. The dynamic type system of SQLite is backwards compatible whith the more common static type systems of oher database
+engines in the sense that SQL statements that work on statically typed databases work the same way in SQLite. However, the dynamic
+typing in SQLite allows it to do things wich are not possible in traditional rigidly typed databases. Flexible typing is a feature of SQLite, not a bug.
