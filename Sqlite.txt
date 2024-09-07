@@ -36,10 +36,176 @@ flexible es una caracteristica de SQLite, no un error.
 
 
 1*DATATYPES IN SQLITE
-Most SQL database engines(every SQL database engine other than SQLite, as far as we know) uses static, rigid typing. Whit static typing,
+Most SQL database engines(every SQL database engine other than SQLite, as far as we know) uses static, rigid typing. With static typing,
 the datatype of a value is determined by its container - the particular column in wich the vales is stores.
 
-SQLite uses a more general dynamic type system. In SQLite, the datatype of a values is associated whith the value itself, not with th
+SQLite uses a more general dynamic type system. In SQLite, the datatype of a values is associated whith the value itself, not with the
 value itself, not with its container. The dynamic type system of SQLite is backwards compatible whith the more common static type systems of oher database
 engines in the sense that SQL statements that work on statically typed databases work the same way in SQLite. However, the dynamic
 typing in SQLite allows it to do things wich are not possible in traditional rigidly typed databases. Flexible typing is a feature of SQLite, not a bug.
+
+
+2*CLASES DE ALMACENAMIENTO Y TIPOS DE DATOS
+Cada valor almacenado en una base de datos SQLite (o manipulado por el motor de base de datos) tiene una de las siguientes clases de almacenamiento:
+    **NULL. El valor es un valor NULL.
+    **ENTERO. El valor es un entero con un signo almacenado en 0,1,2,3,4,6 u 8 bytes segun la magnitud del valor.
+    **REAL. El valor es un valor de punto flotante, almacenado como un numero de punto flotante IEEE de 8 bytes.
+    **TEXTO. El valot es una cadena de texto, almacenada utilizando la codificacion de la base de datos (UTF-8, UTF-16BE o UTF-16LE).
+    **BLOB. El valor es un blob de datos, almacenado exactamente como fue ingresado.
+
+Una clase de almacenamiento es mas general que un tipo de datos. La clase de almacenamiento INTEGER, por ejemplo, incluye 7 tipos de datos enteros
+diferentes de distintas longitudes. Esto marca una diferencia en el disco. Pero tan pronto como los valores INTEGER se leen del disco y se colocan
+en la memoria para su procesamiento, se convierten al tipo de datos mas general (entero con signo de 8 bytes). Por lo tanto, en la mayoria de los casos, "clases 
+de almacenamiento" es distinguible de "tipo de datos" y los terminos se pueden usar indistintamente.
+
+Cualquier columna de una base de datos SQLite version 3, excepto una columna INTEGER PRIMERY KEY, se puede utilizar par almacerar un valor de cualquier clase de 
+almacenamiento.
+
+Todos los valores de sentencias SQL, ya sean literales o integrados en el texto de la sentencia SQL o parametros vinculados a sentencias SQL precompiladas, tienen una 
+clase de almacenamiento implicita. En las circunstancias que se describen a continuacion, el motor de base de datos puede convertir valores entre clases de almacenamiento numero
+(INTEGER Y REAL) Y TEXT durante la ejecucion de una consulta.
+
+2*STORAGE CLASSES AND DATATYPES
+Each value stored in an SQLite databse (or maniupulated by the database engine) has one of the following storage classes:
+     **NULL. The value is a NULL value.
+     **INTEGER. The value is a signed integer, stored in 0,1,2,3,4,6 or 8 bytes depending on the magnitude of the value.
+     **REAL. The value is a floating point value, storedd as an 8-byte IEEE floating point number.
+     **TEXT. The value is a text string, stored using the database encoding (UTF-8, UTF-16BE or UTF-16LE).
+     **BLOB. The value is a blob of data, stored exactly as it was input.
+
+A storage class is more general than a datatype. The INTEGER storage class, for example, includes 7 different integer datatypes of different lengths. This makes a difference on disk.
+But as soon as INTEGER values are read off of disk and into memory for processing, they are converted to the most general datatype (8-bte signed integer). And so for the most part, "storage class" is indistinguishable
+from "datatype" and the two terms can be used interchangeably.
+
+Any column in an SQLite version 3 database, except and INTEGER PRIMARY KEY column, may be used to store a value of any storage class.
+
+All values in SQL statements, whether they are literals embedded in SQL statement text or parameters bound to precompiled SQL statements have an implicit storage class. Under circumstances described below, the database
+engine may convert values between numeric storage classes. (INTEGER and REAL) and TEXT during query execution.
+
+*2.1 TIPO DE DATOS BOOLEANO
+SQLite no tiene una clase de almacenamiento booleana independiente. En su lugar, los valores booleanos se almacenan como numeros enteros 0 (falso) y 1 (verdadero).
+
+SQLite reconoce las palabras clave "TRUE" y "FALSE", a partir de al version 3.23.0 (2018-04-02), pero esas palabras clave son en realidad solo graficas alternativas para los literales enteros 1 y 0 respectivamente.
+
+*2.1 BOOLEAN DATATYPE
+SQLite does not have a separate Boolean storage class. Instead, Boolean values are stored as integers 0 (false) and 1 (true).
+
+SQLite recognizes the keywords "TRUE" and "FALSE", as of version 3.23.0 (2018-04-02) but those keywords are really just alternative spellings for the integer literals 1 and 0 respectively.
+
+*2.2 TIPO DE DATOS DE FECHA Y HORA
+SQLite no tiene una clase de almacenamiento reservada para almacenar fechas y horas. En cambio, las funciones de fecha y hora integradas de SQLite pueden almacenar fechas y horas como valores de TEXTO, REALES o ENTEROS:
+    **TEXTO como cadenas ISO8601("AAAA-MM-DD  HH:MM:SS.SSS").
+    **REAL como numeros de dias julianos, el numero de dias desde el mediodia en Greenwich el 24 de noviembre de 4714 a.c segun el calendarios gregoriano proleptico.
+    **ENTERO como tiempo Unix, el numero de segundos desde 1970-01-01 00:00:00 UTC.
+
+Las aplicaciones puede elegir almacenar fechas y horas en cualqueira de estos formatos y convertir libremente entre formatos utilizando las funciones de fecha y hora integradas.
+
+*2.2 DATE AND TIME DATATYPE 
+SQLite does not have a storage class set aside for storing dates and/or times. Instead, the built-in Date ant Time Functions of SQLite are capable of storing dates and times as TEXT,REAL, or INTEGER values:
+    **TEXT as ISO8601 strings ("YYYY-MM-DD   HH:MM:SS.SSSS").
+    **REAL as Julian day numbers, the number of days since noon in Greenwich on november 24, 4714 B.C. according to the proleptic gregorian calendar.
+    **INTEGER as Unix time, the number of seconds since 1970-01-01 00:00:00 UTC.
+
+Applications can choose to store dates and times in any of these formats and freely convert between formats using the built-in date and time functions.
+
+3*TIPO AFINIDAD
+Los motores de abses de datos SQL que utilizan tipado rigido generalmente intentaran convertir automaticamente los valores al tipo de datos adecuado. Considere lo siguiente: 
+            CREAR TABLA t1 (a INT, b VARCHAR(10));
+            INSERTAR EN t1(a,b) VALORES ('123','456);
+La base de datos rigidamente tipada convertira la cadena '123' en un entero '123' y el entero 456 en una cadena '456' antes de realizar la insercion.
+
+Para maximizar la compatibilidad entre SQLite y otros motores de bases de datos, y para que el ejemplo anterior funcione en SQLite como lo hacen en otros motores de bases de datos SQL,
+SQLite admite el concepto de "afinidad de tipo" en las columnas. La afinidad de tipo de una columna es el tipo recomendado para los datos almacenados en esa columna. La idea importante aqui es que el tipo es recomendado,
+no obligatorio. Cualquier columna puede almacenar cualquier tipo de datos. Es solo usar una clase de almacenamiento en lugar de otra. La clase de almacenamiento preferida para una columna se llama "afinidad".
+
+A cada columna de una base de datos SQLite 3 se le asigna una de las siguientes afinidades de tipo: 
+    **TEXTO
+    **NUMERICO
+    **ENTERO
+    **REAL
+    **GOTA
+(Nota historica: La afindad de tipo "BLOB" solia llamarse "NONE". Pero este termino era facil de confundir con "sin afinidad", por lo que se le cambio el nombre.
+
+Una columna con afinidad TEXT almacena todos los datos utilizando las clases de almacenamiento NULL, TEXT o BLOB. Si se insertan datos numericos en una columna con afinidad TEXT, se convierten a formato de texto antes de almacenarlos .
+
+Una columna con afinidad NUMERICA puede contener valores que utilicen las cinco clases de almacenamiento. Cunado se insertan datos de texto en una columna NUMERICA, la clase de almacenamiento de texto se convierte a INTEGER o REAL (en orden
+de preferencia) si el texto es un literal real o entero bien formado,
+respectivamente. Si el valor TEXT es un literal entero bien formado que es demasiado grande para caber en un entero con signo de 64 bits, se convierte a REAL. Para las conversiones entre las clases de almacenamiento TEXT y REAL, solo se 
+conservan los primeros 15 digitos decimales significativos del numero. Si el valor TEXT no es un literal real o entero bien formado, entonces el valor se almacena como text. Para
+los fines de este parrafo, los literales enteros hexadecimales no se consideran bien formados y se almacenan como TEXT. (Esto se hace por compatibilidad historica con versiones de SQLite anteriores a la version 3.8.6 2014-08-15 donde los literales 
+enteros hexadecimales se introdujeron por primera vez en SQLite).
+Si se inserta un valor de punto flotanto que se puede representar exactamente como un entero en una columna con afinidad NUMERICA, el valor se convierte en un entero.
+No se intenta convertir valores NULL o BLOB.
+
+Una cadena puede parecer un literal de punto flotante con un punto decimal y/o notacion de exponente, pero siempre que el valor pueda expresarse como un entero, la afinidad NUMERICA
+lo convertira en un entero. Por lo tanto, la cadena '3.0e+5' se almacena en una columna con afinidad NUMERICA como el entero 300000, no como el valor de punto flotante 300000.0.
+
+Una columna con afinidad REAL se comporta como una columna con afinidad NUMERICA, excepto que fuerza los valores enteros a una representacion de punto flotante. (Como optimizacion interna, los valores de punto flotante pequeños sin componente 
+fraccionario y almacenados en columnas con afinidad REAL se escriben en el disco como enteros para ocupar menos espacio y se convierten automaticamente de nuevo a punto flotante a medida que se lee el valor. Esta optimizacion es completamente 
+invisible a nivel de SQL y solo se puede detectar examinando los bits sin procesar del archivo de base de datos).
+
+*TYPE AFFINITY 
+SQL database engines that use rigid typing will usually try to automatically convert values to the appropiate datatype. Consider this:
+      CREATE TABLE t1(a INT, b VARCHAR(10));
+      INSERT INTO t1(a,b) VALUES ('123','456');
+Rigidly-typed database will convert the string '123' into an integer 123 and the integer 456 into a string '456' prior to doing the insert.
+
+In order to maximize compatibility between SQLite and other database engines, and so that the example above will work on SQLite as it does on other SQL database engines,
+SQLite supports the concept of "type affinity" on columns. The type affinity of a column is the recommended type for data stored in that column. The important idea here is that the type is recommended, not required. Any column can still store any 
+type of data. It is just that some columns, given the choice, will prefer to use one storage class over another. The preferred storage class for a column is called its "affinity".
+
+Each column in an SQLite 3 database is assigned one of the following type affinities:
+    *TEXT
+    *NUMERIC
+    *INTEGER
+    *REAL
+    *BLOB
+(Historical note: The "BLOB" type affinity used to be called "NONE". But that term was easy to confuse with "no affinity" and so it was renamed.)
+
+A column with TEXT affinity stores all data using storage classes NULL, TEXT or BLOB. If numerical data is inserted into a column with TEXT affinity it is converted into text form before being stored.
+
+A column with NUMERIC affinity may contain values using all five storage classes. When text data is inserted into a NUMERIC column, the storage class of the text is converted to INTEGER or REAL(in order of preference) if the text is a well-formed integer 
+or real literal, respectively. If the TEXT value is a well-formed integer literal that is too large to fit in a 64-bit signed integer, it is converted to REAL. For conversions between TEXT and REAL storage classes, only the first 15 significant decimal digits of the 
+number are preserved. If the TEXT value is stored as TEXT.For the pirposes of this paragraph, hexadecimal integer literals are not considered well-formed and are stored as TEXT. (This is for historical compatibility
+with versions of SQLite prior to version 3.8.6 2014-08-15 where hexadecimal integer literals were first introduced into SQLite.) If a floating point value that can be represented exactle as and integer is inserted into a column with NUMERIC affinity,
+the value is converted into as integer. No attempt is made to convert NULL or BLOB values.
+
+A string migth look like a floating-point literal with a decimal point and/or exponent notation but as long as the value can be expressed as integer, the NUMERIC affinity will convert it into an integer. Hence, the 
+string '3.0e+5' is stored in a column with NUMERIC affinity, the value is converted into an integer 300000, not as the floating point value 30000.0.
+
+A column that uses INTEGER affinity behaves the same as a column with NUMERIC affinity. The difference between INTEGER and NUMERIC affinity is only evident in a CAST expression: The expression "CAST(4.0 AS INT)" returns and integer 4, whereas "CAST(4.0 
+AS NUMERIC)" leaves the values as a floating-point 4.0.
+
+A column with REAL affinity behaves like a column with NUMERIC affinity except that it forces integer values, into floating point representation. (As an internal optimization, small floating point values with no fractional component and stored in columns
+with REAL affinity are written to disk as integer in order to take up less space and are automatically converted back into floating point as the value is read out. This optimization is completely invisible at the SQL level and can only be detected by examining the raw
+bits of the database file.)
+
+A column with affinity BLOB does not prefer one storage class over another and no attempt is made to coerce data from one storage cllas into another.
+
+*3.1 DETERMINACION DE LA FINIDAD DE LA COLUMNA
+Para las tablas no declaradas como STRICT, la afinidad de la columna no esta determinada por el tipo declarado de la columna, de acuerdo con las siguientes reglas en el orden que se muestra:
+  1. Si el tipo declarado contiene la cadena "INT", entonces se le asigna la afinidad INTEGER.
+  2. Si el tipo declarado de la columna contiene cualquiera de las cadenas "CHAR", "CLOB" o "TEXT", entonces esa columna tiene afinidad TEXT. Observe que el tipo 
+VARCHAR contieen la cadena "CHAR" y, por lo tanto, se le asigndad la afinidad TEXT.
+  3. Si el tipo declarado para una columna contiene la cadena "BLOB" o si no se especifica ningun tipo entonces la columna tiene
+afinidad BLOB.
+  4. Si el tipo declarado para una columna contiene cualquiera de las cadenas "REAL, "FLOA", o "DOUB", entonces la columna
+tiene afinidad REAL.
+  5. De lo contrario, la afinidad es NUMERICA.
+
+Tenga en cuenta que el orden de las reglas para determinar la afinidad de las columnas es importante. Una columna cuyo tipo declarado
+sea "CHARINT" coincidira con las reglas 1 y 2, pero la primera regla tendra prioridad y, por lo tanto, la afinidad de la columna sera INTEGER.
+
+*3.1 DETERMINATION OF COLUMN AFFINITY
+For tables not declared as STRICT, the affinity of a column is determined by the declared type of the column, 
+accoirding to the following rules in the order shown:
+  1. If the declared type contains the string "INT" then it is assigned INTEGER affinity.
+  2. If the declared type of the column contains any of the strings "CHAT", "CLOB", or "TEXT" the that column has TEXT
+affinity. Notice that the type VARCHAR contatins the string "CHAR" and is thus assinged TEXT affinity.
+  3. If the declared type for a column contains the string "BLOB" or if no type is specified the the colunm has affinity BLOB.
+  4. If the declared type for a column contains any of the string "REAL", "FLOA", or "DOUB" then the column has REAL affinity.
+  5. Otherwise, the affinity is NUMERIC.
+
+Note that the order of the rules for defermining column affinity is important. A column whose declared type is "CHARINT" will match both rules 
+1 and 2 but the first rule takes precedence so the column affinity will be INTEGER.
+  
