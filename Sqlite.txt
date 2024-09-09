@@ -208,4 +208,151 @@ affinity. Notice that the type VARCHAR contatins the string "CHAR" and is thus a
 
 Note that the order of the rules for defermining column affinity is important. A column whose declared type is "CHARINT" will match both rules 
 1 and 2 but the first rule takes precedence so the column affinity will be INTEGER.
-  
+
+*3.1.1 EJEMPLOS DE NOMBREES DE AFINIDAD
+La siguiente tabla muestra cuantos nombres de tipos de datos comunes de implementaciones SQL mas tradicionales se convierten
+en afinidades mediante las cinco reglas de la seleccion anterior. Esta tabla muestra solo un pequeño subconjunto de los nombres de tipos
+de datos que SQLite aceptara. Tenga en cuenta que SQLite ignora los argumentos numericos entre parentesis que siguen
+al nombre del tipo (por ejemplo "VARCHAR(255)"); SQLite no impone ninguna restriccion de longitud (exepto el gran limite
+goblal SQLITE MAX LENGTH) sobre la longitud de cadenas, BLOB o valores numericos.
+
+EJ NOMBRES DE TIPOS DE DECLARACION        AFINIDAD RESULTANTE           REGLA UTILIZADA PARA DETERMINAR
+CREATE TABLE O LA EXPRESION CAST                                        AFINIDAD
+   *INT                                   ENTERO                            1
+   *ENTERO                                ENTERO                            1
+   *PEQUEÑO                               ENTERO                            1
+   *INT PEQUEÑO INT                       ENTERO                            1
+   *MEDIO INT GRANDE SIN SIGNO            ENTERO                            1
+INT GRANDE INT2 INT 8
+
+
+   *CHARACTER(20)                         TEXTO                            2
+   *VARCHAR(255)                          TEXTO                            2
+   *CHRACTER                              TEXTO                            2
+   *VARYING(255)                          TEXTO                            2
+   *NCHAR(55)                             TEXTO                            2
+   *CHARACTER NATIVE(70)                  TEXTO                            2
+   *NVCHAR(100)                           TEXTO                            2
+   *TEXTO                                 TEXTO                            2
+   *CLOB                                  TEXTO                            2
+       
+
+
+   *BLOB                                  GOTA                             3
+(Sin tipo de datos especificado)
+
+   *FLOTADOR DE PRECISION                 REAL                             4
+DOBLE DOBLE REAL
+
+   *NUMERICO                              NUMERICO                         5
+   *DECIMAL(10,5)                         NUMERICO                         5
+   *BOOLEAN                               NUMERICO                         5
+   *FECHA                                 NUMERICO                         5
+   *FECHAHORA                             NUMERICO                         5
+
+
+Tengan en cuenta que un tipo declarado de "PUNTO FLOTANTE" daria afinidad de ENTERO, no de REAL, debido al
+"INT" al final de un "PUNTO". Y el tipo declarado de "CADENA" tiene una afinidad de NUMERICO, no de TEXTO.
+
+*3.1.1 AFFINITY NAME EXAMPLES
+The following table shows how many common datatype names from more traditional SQL implementations are converted
+into affinities by the file rules of the previous section. This table shows only a slmall subset of the datatype
+names that SQLite will acept. Note that numeric argument in parentheses that following the type name (ex:"VARCHAR(255)")
+are ignored by SQLite - SQLite does not impose any length restrictions (other than the large global SQLITE MAX LENGTH
+limit) on the length of strings, BLOBs or nunmeric values.
+
+
+EXAMPLESTYPENAMES FROM   THE              RESULTING AFFINITY          RULE USED TO DETERMINE AFFINITY
+CREATE TABLE STATEMENT OR CAST EXPRESION                                       
+   *INT                                                                    1
+   *INTEGER                               INTEGER                          1
+   *TINYINT                               INTEGER                          1
+   *SMALLINT                              INTEGER                          1
+   *BIGINT                                INTEGER                          1
+   *UNSIGNED BIG INT                      INTEGER                          1
+   *INT2                                  INTEGER                          1
+   *INT8                                  INTEGER                          1
+
+
+   *CHARACTER(20)                         TEXT                             2
+   *VARCHAR(255)                          TEXT                             2
+   *VARYING CHARACTER(255)                TEXT                             2
+   *NCHAR(55)                             TEXT                             2
+   *NATIVE CHARACTER(70)                  TEXT                             2
+   *NVCHAR(100)                           TEXT                             2
+   *TEXT                                  TEXT                             2
+   *CLOB                                  TEXT                             2
+       
+
+
+   *BLOB                                  BOLOB                           3
+(no datatype specified)
+
+   *REAL                                  REAL                            4
+   *DOUBLE                                REAL                            4
+   *DOUBLE PRECISION                      REAL                            4
+   *FLOAT                                 REAL                            4
+ 
+   *NUMERIC                               NUMERIC                         5
+   *DECIMAL(10,5)                         NUMERIC                         5
+   *BOOLEAN                               NUMERIC                         5
+   *DATE                                  NUMERIC                         5
+   *DATETIME                              NUMERIC                         5
+
+Note that a declared type of "FLOATING POINT" would give INTEGER affinity, not REAL affinity, due to the "INT"
+at the end of "POINT". And the declared type of "STRING" has an affinity of NUMERIC, not TEXT.
+
+*3.2 AFINIDAD DE EXPRESIONES
+Cada columna de la tabla tiene una afinidad de tipo (una de BLOB, TEXT, INTEGER, REAL o NUMERIC), pero las
+expresiones no necesariamente tienen una afinidad.
+
+La afinidad de expresion esta determinada por las siguientes reglas:
+  *El operando derecho de un operador INT o NOT INT no tiene afinidad sin el operando es una lista, o tiene
+la misma afinidad que la expresion del conjunto de resultados si el operando es un SELECT.
+  *Cuando una expresion es una referencia simple a una columna de una tabla real ( no una VISTA o subconsulta),
+entonces la expresion tiene la misma afinidad que la columna de la tabla.
+       .Los parentesis que rodean el nombre de la columna se ignoran. Por lo tanto, si X e YZ son nombres
+        de columnas , (X) e (YZ) tambien se consideran nombres de columnas y tienen la misma afinidad de
+        las columnas correspondientes.
+       .Cualquier operador aplicado a los nombres de columnas, incluido el operador uniario "+", convierte el 
+        nombre de la columna en una expresion que nunca tiene afinidad.  Por lo tanto, incluso si X e YZ son 
+        nombres de columnas, las expresiones +X y +YX no son nombres de columnas y no tienen afinidad.
+  *Una expresion de la forma "CAST( exp AS type)" tiene una afinidad que es la misma que una columna de tipo 
+declarado de "type".
+  *Un operador COLLATE tiene la misma afinidad que su operando del lado izquierdo.
+  *De lo contrario, una expresion no tiene afinidad.
+
+*3.2 AFFINITY OF EXPRESSIONS
+Every table column has a type affinity (one of BLOB, TEXT, INTEGER, REAL, or NUMERIC) but expressions do not 
+necessary have an affinity.
+
+Expression affinity is determined by the following rules:
+  *The rigth-hand operand of an INT or NOT INT operator has no affinity if the operand is a list, or has
+the same affinity as the affinity of the result set expression if the operand is a SELECT.
+  *When an expression is a simple reference to a column of a real table (not a VIEW of subquery) then the
+expression has the same affinity as the table column.
+        .Parentheses around the column name are ignored. Hence if X and Z.Y are columns names, then (X) and 
+        (Y.Z) are also considered column names and have the affinity of the corresponding cloumns.
+        .Any operators applied to column names, including the no-op unary "+" operator, convert the column
+        name into an expression wich always has no affinity. Hence even if X and Y.Z are column names, the
+        expressions +x and +Y.Z are not columns names and have no affinity.
+  *An expression of the form "CAST(expr AS type)" has an affinity that is the same as a column with a declared type
+of "type".
+  *A COLLATE operator has the same affinity as its left-hand side operand.
+  *Otherwise, an acpression has no affinity.
+
+*3.3 AFINIDAD DE COLUMNAS PARA VISTAS Y SUBCONSULTAS
+Las "columnas" de una subconsulta de clausula FROM o VIEW son en realidad las expresiones del conjunto de resultados de la sentencia
+SELECT que implementa la clausula FROM o VIEW. Por lo tanto, la afinidad de las columnas de una clausula FROM
+o VIEW se determina mediante las reglas de afinidad de expresiones anteriores. Considere un ejemplo:
+      CRETE TABLE t1( a INT, b TEXTO, c REAL);
+      CREATE VIST v1(x,y,z) COMO SELECCIONAR b, a+c, 42 de t1 WHERE b!=11;
+La afinidad de la columna v1.x sera la misma que la afinidad de t1.b (TEXT), ya que v1.x se asigna directamente
+a t1.b. Pero las columnas v1 y y v1.z no tienen afinidad, ya que esas columnas se asignan a la expresion a+c y 42,
+y las expresiones siempre no tienen afinidad.
+
+*3.3 COLUMN AFFINITY FOR VIEWS AND SUBQUERYS
+The "columns" of a VIEW or FROM-clause subquery are really the expressions in the result set of the SELECT
+statement that implements the VIEW of subquery. Thus, the affinity for columns of a VIEW or subquery are determined
+by the expression affinity rules above.
+Consider an example: 
