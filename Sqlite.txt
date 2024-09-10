@@ -507,3 +507,77 @@ numerically equal. No afiinities are applied to any values as the result of a GR
 
 The compound SELECT operators UNION, INTERSECT and EXCEPT  perform implicit comparisons between values. No affinity is apllied to comparison operands for the implicit comparisons associated with UNION, 
 INTERSECT, or EXCEPT - the values are compared as is.
+
+7* RECOPILACION DE SECUENCIAS
+Cuando SQLite compara dos cadenas, utiliza una secuencia de intercalacion o una funcion de intercalacion (dos terminos para lo mismo) para determinar que cadena es mayor o si las dos cadenas
+son iguales. SQLite tiene tres funciones de intercalacion integradas : BINARY, NOCASE Y RTRIM.
+    *BINARIO: Comprada datos de cadena utilizando memcmmp(), independientemente de la codificacion del texto.
+    *NOCASE: similar al binario, excepto que utiliza sqlite3 strincmp(). para la comparacion. Por lo tanto, los 26 caracteres en mayusculas de ASCII se convierten en sus equivalentes en minusculas
+    antes de realizar la comparacion. Tenga en cuenta que solo se convierten en mayusculas los caracteres ASCCII. 
+    SQLite no intenta realizar la conversion completa de mayusculas y minusculas en UTF debido al tamaño de tablas requeridas. Tenga en cuenta tambien que cualquier caracter U+0000 en la cadena
+    se considera un terminador de cadena para fines de comparacion.
+    *RTRIM: Lo mismo que el binario, excepto que se ignoran los caracteres de espacio finales.
+
+Una aplicacion puede registrar funciones de intercalacion adicionales utilizando la interfaz sqlite3 create collation().
+
+Las funciones de intercalacion solo son importantes cuando se comparan valores de cadena. Los valores numericos 
+siempre se comparan numericamente y los BLOB siempre se comparan byte a byte mediante memcmp().
+
+*7 COLLATING SEQUENCES
+When SQLite compares two strings, it uses a collating sequence or collating function (two terms for the same thing) to determine wich string
+is greater or if the two strings are equal. SQLite has three built-in collating functions: BINARY, NOCASE and RTRIM.
+   *BINARY - Compares string data using memcmp(), regardless of text encoding.
+   *NOCASE - Similar to binary, except that it uses sqlite3 strnicmp(). for the comparison. Hence the 26 upper case
+   characters of ASCII are folded to their lower case equivalents before the comparison is performed. Note that only ASCII characters
+   are case folder. SQLite does not attempt to do full UTF case folding due to the size of the tables required. Also note that any U+0000
+   characters i the string are considered string terminators for comparison puposes.
+   *RTRIM - The same as binary, except that trailing space characters are ignored.
+
+An application can register additional collating functions using the sqlite3 create collation(). interface.
+
+Collating functions only matter when comparing string values. Numeric values are always compared numerically, and BLOBs are always
+compared byte-by-byte using memcmp().
+
+*7.1 ASINGNACION DE SECUENCIAS DE INTERCALACION DESDE SQL
+Cada columna de cada tabla tiene una funcion de intercalacion asociada. Si no se definde explicitamente ninguna funcion de intercalacion, la funcion
+de intercalacion predeterminada es BINARY. La clausula COLLATE de la defincion de columna se utiliza para definir funciones de intercalacion 
+alternativas para una columna.
+
+Las reglas para determinar que funcion de comparacion utilizar para un operador de comparacion binaria son las siguientes:
+   1.- Si alguno de los operandos tiene la asignacion de funcion de comparacion explicita utilizando el operador sufijo COLLATE, entonces se utiliza
+la funcion de comparacion explicita para la comparacion del operando izquierdo.
+   2.- Si alguno de los operandos es una columna, se utiliza la funcion de ordenacion de esa columna con prioridad sobre el operando izquierdo. A los 
+efectos de la oracion anterior, un nombre de columna procedido por uno o mas operadores unarios "+" y/o operadores CAST se sigue considerando un
+nombre de columna.
+   3.- De lo contrario, se utiliza la funcion de comparacion BINARY.
+
+Se considera que un operando de una comparacion tiene una asignacion de funcion de intercalacion explicita (regla 1 anterior) si alguna subexpresion del operando
+utiliza el operador COLLATE de posfijo. Por lo tanto, si se utiliza un operador COLLATE en cualquier parte de una expresion de comparacion, la funcion de intercalacion
+definida por ese operador se utiliza para la comparacion de cadenas independientemente de que columnas de la tabla puedan ser parte de esa expresion. Si aparecen
+dos o mas subexpresiones del operador COLLATE en cualquier parte de una comparacion, se utiliza la funcion de intercalacion explicita mas a la izquierda independientemente
+de cuan profundamente esten anidados los operadores COLLATE en la expresion e independientemente de como este entre parentesis la expresion
+
+La expresion "x ENTRE y y <" es logicamernte equivalente a dos comparacines "x >= y AND x <=z " y funciona con respecto a las funciones de cotejo como si fueran dos
+comparaciones separadas. La expresion "x IN (SELECT y...)" se maneja de la mimsma manera que la expresion "x=y" a los efectos de determinar la secuencia de cotejo. La 
+secuencia de cotejo utiliza para expresiones de la forma "x IN (z,y,...)" es la secuencia de cotejo explicita de un operador IN, se debe aplicar al operando izquierdo, de esta
+manera: "x COLLATE nocase IN (y,z...)".
+
+A los terminos de la clausula ORDER BY que forman parte de una instruccion SELECT se les puede asignar una secuencia de ordenacion mediante el operador COLLATE, en cuyo caso 
+se utiliza la funcion de ordenacion especificada. De lo contrario, si la expresion ordenada por una clausula ORDER BY es una columna, se utiliza la secuencia de ordenacion de la
+columna para determinar el orden de clasificacion. Si la expresion no es una columna y no tiene una clausula COLLATE, se utiliza la secuencia de ordenacion BINARY.
+
+*7.1 ASSIGNING COLLATING SEQUENCES FROM SQL
+Every column of every table has an associated collating function. If no collating function is explicitly defined, then the collating function defaults to BINARY. The COLLATE
+clause of the column definition is used to define alternative collating functions for a column.
+
+The rules for determining wich collating function to use for a binary comparison operator are as follows:
+   1.- If either operand has an explicit collating function assignment using the postfix COLLATE operator, then the explicit collating function is used for comparison, with
+precedence to the collating function of the left operand.
+   2.- If either operand is a column, then the collating function of that column is used with precedence to the left operand. For the purposes of the previus sentence, a column
+name prceded by one or more unary "+" operators and/or CAST operators is still considered a column name.
+   3.- Otherwise, the BINARY collating functions is used for comparison.
+
+An operand of a comparison is considered to have an explicit collating function assignment(rule 1 above) if any suubexpression of the operand uses the postfix COLLATE operator. 
+Thus, if a COLLATE operator is used anywhere in a comparison expression, the collating function defined by that operator is used for string comparison regardless of what table 
+columns migth be a part of that expression. If two or more COLLATE operator subexpressions appear anywhere in a comparison, the left most explicit collating function is ued regardless of how 
+deeply the COLLATE operators are nested in the expression and regardless of how the expression is parenthesized.
