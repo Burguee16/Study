@@ -581,3 +581,12 @@ An operand of a comparison is considered to have an explicit collating function 
 Thus, if a COLLATE operator is used anywhere in a comparison expression, the collating function defined by that operator is used for string comparison regardless of what table 
 columns migth be a part of that expression. If two or more COLLATE operator subexpressions appear anywhere in a comparison, the left most explicit collating function is ued regardless of how 
 deeply the COLLATE operators are nested in the expression and regardless of how the expression is parenthesized.
+
+The expression "x BETWEEN y  an z" is logically equivalent to two camparisons "x >= y AND x<= <" and works with respect to collating functions as if it were two separate comparisons.
+The expression "x IN (SELECT y...)" is handled in the same way as the expression "x = y" for the puposes of determining the collating sequence. The collating sequence used for 
+expressions of the form "x IN (y,z,...)" is the collating sequence of x. If an explicit collating sequence is required on an IN operator it should be applied to the left operand,
+like this: "x COLLATE nocase IN (y,z,...)".
+
+Terms of the ORDER BY clause that is part of a SELECT statement may be assigned a collating sequence using the COLLATE operator, in wich case the specified collating function is 
+used for sorting. Otherwise, if the expression sorted by and ORDER BY clause is a column, then the collating sequence of the column is used to determine sort order. If the expression 
+is not a column and has no COLLATE clause, then the BINARY collating sequence is used.
